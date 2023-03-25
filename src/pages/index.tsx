@@ -1,8 +1,8 @@
 import Head from 'next/head'
 
-import WalletContextProvider from '../components/WalletContextProvider.tsx'
-import Header from '../components/Header.tsx'
-import Main from '../components/Main.tsx'
+import WalletContextProvider from '../components/WalletContextProvider'
+import Header from '../components/Header'
+import Main from '../components/Main'
 
 export default function Home() {
   return (
