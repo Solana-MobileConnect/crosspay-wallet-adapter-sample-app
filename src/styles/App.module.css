@@ -1,0 +1,27 @@
+.Header {
+  display: flex;
+  justify-content: center;
+  padding: 50px;
+}
+
+.HeaderContainer {
+  display:flex;
+  width:75%;
+  max-width: 1200px;
+  justify-content: space-between;
+}
+
+.HeaderContainer span {
+  font-size:24pt;
+}
+
+.Main {
+  display: flex;
+  justify-content: center;
+  padding-top: 50px;
+}
+
+.MainContainer {
+  width:75%;
+  max-width: 1200px;
+}
