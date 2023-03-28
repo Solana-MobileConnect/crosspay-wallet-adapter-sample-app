@@ -1,54 +1,52 @@
 import type { EventEmitter, SendTransactionOptions, WalletName } from '@solana/wallet-adapter-base';
 
 import {
-    BaseMessageSignerWalletAdapter,
-    isIosAndRedirectable,
-    isVersionedTransaction,
-    scopePollingDetectionStrategy,
-    WalletAccountError,
-    WalletConnectionError,
-    WalletDisconnectedError,
-    WalletDisconnectionError,
-    WalletError,
-    WalletNotConnectedError,
-    WalletNotReadyError,
-    WalletPublicKeyError,
+    BaseWalletAdapter,
     WalletReadyState,
-    WalletSendTransactionError,
-    WalletSignMessageError,
-    WalletSignTransactionError,
 } from '@solana/wallet-adapter-base';
+
+import CrossPayClient from './CrossPayClient.ts'
+
+import { PublicKey } from '@solana/web3.js';
+
+import LoginWindow from './LoginWindow'
 
 export const QRCodeWalletName = 'QR Code' as WalletName<'QRCodeWallet'>;
 
 import { icon } from './icon'
 
-export class QRCodeWalletAdapter extends BaseMessageSignerWalletAdapter {
+export interface PhantomWalletAdapterConfig {
+  serverHost?: string
+}
+
+export class QRCodeWalletAdapter extends BaseWalletAdapter {
     name = QRCodeWalletName;
     url = 'https://solana-crosspay.com';
     icon = icon;
 
     supportedTransactionVersions: ReadonlySet<TransactionVersion> = new Set(['legacy', 0]);
 
+    private _client: CrossPayClient;
 
-    private _keypair: Keypair | null = null;
+    private _connecting: boolean;
 
-    constructor() {
+    private _publicKey: PublicKey | null;
+
+    constructor(config: QRWalletAdapterConfig = {}) {
         super();
-        console.warn(
-            'Your application is presently configured to use the `UnsafeBurnerWalletAdapter`. ' +
-                'Find and remove it, then replace it with a list of adapters for ' +
-                'wallets you would like your application to support. See ' +
-                'https://github.com/solana-labs/wallet-adapter#usage for an example.'
-        );
+
+        this._client = new CrossPayClient(config.serverHost || 'https://crosspay-server.onrender.com/')
+
+        this.emit('readyStateChange', WalletReadyState.Loadable)
+        //this.emit('readyStateChange', WalletReadyState.Installed)
     }
 
     get connecting() {
-        return false;
+        return this._connecting;
     }
 
     get publicKey() {
-        return this._keypair && this._keypair.publicKey;
+        return this._publicKey;
     }
 
     get readyState() {
@@ -56,25 +54,27 @@ export class QRCodeWalletAdapter extends BaseMessageSignerWalletAdapter {
     }
 
     async connect(): Promise<void> {
-        this._keypair = new Keypair();
-        this.emit('connect', this._keypair.publicKey);
+        console.log("connect")
+
+        try {
+
+            if (this.connected || this.connecting) return;
+
+            this._connecting = true;
+
+            // this.emit('connect', publicKey);
+
+        } catch (error: any) {
+            this.emit('error', error);
+            throw error;
+
+        } finally {
+            this._connecting = false;
+        }
     }
 
     async disconnect(): Promise<void> {
-        this._keypair = null;
-        this.emit('disconnect');
-    }
-
-    async signTransaction<T extends Transaction | VersionedTransaction>(transaction: T): Promise<T> {
-        if (!this._keypair) throw new WalletNotConnectedError();
-
-        if (isVersionedTransaction(transaction)) {
-            transaction.sign([this._keypair]);
-        } else {
-            transaction.partialSign(this._keypair);
-        }
-
-        return transaction;
+        console.log("disconnect")
     }
 
     async sendTransaction<T extends Transaction | VersionedTransaction>(
@@ -82,6 +82,8 @@ export class QRCodeWalletAdapter extends BaseMessageSignerWalletAdapter {
         connection: Connection,
         options: SendTransactionOptions = {}
     ): Promise<TransactionSignature> {
+
+      console.log("send transaction", transaction)
 
         /*
         try {

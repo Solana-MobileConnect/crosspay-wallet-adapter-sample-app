@@ -9,8 +9,8 @@ import { QRCodeWalletAdapter } from '../wallets/qr-code-wallet/adapter'
 
 const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const wallets = [
+      new QRCodeWalletAdapter(),
       new PhantomWalletAdapter(),
-      new QRCodeWalletAdapter()
     ]
 
     const endpoint = web3.clusterApiUrl('devnet')
