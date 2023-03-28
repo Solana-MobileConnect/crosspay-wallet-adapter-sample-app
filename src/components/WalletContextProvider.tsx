@@ -5,8 +5,13 @@ import * as web3 from '@solana/web3.js'
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 require('@solana/wallet-adapter-react-ui/styles.css')
 
+import { QRCodeWalletAdapter } from '../wallets/qr-code-wallet/adapter'
+
 const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
-    const wallets = [new PhantomWalletAdapter()]
+    const wallets = [
+      new PhantomWalletAdapter(),
+      new QRCodeWalletAdapter()
+    ]
 
     const endpoint = web3.clusterApiUrl('devnet')
 
