@@ -1,9 +1,11 @@
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import styles from '../styles/App.module.css'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Transaction, PublicKey, LAMPORTS_PER_SOL, SystemProgram, TransactionInstruction, Keypair } from '@solana/web3.js'
 
 const util = require('util')
+
+import { v4 as uuid } from 'uuid'
 
 export default function Main() {
 
@@ -12,7 +14,16 @@ export default function Main() {
     const { connection } = useConnection();
     const { publicKey, sendTransaction } = useWallet();
 
-    const sendSolExec = async (receiver, amount) => {
+    useEffect(()=>{
+      if(publicKey === null) {
+        setTxSig('')
+      }
+    }, [publicKey])
+   
+
+    const sendSolExec = async (receiver: string, amount: string) => {
+
+        if (!publicKey) return
 
         const tx = new Transaction()
 
@@ -23,29 +34,30 @@ export default function Main() {
           SystemProgram.transfer({
             fromPubkey: senderPubKey,
             toPubkey: receiverPubKey,
-            lamports: LAMPORTS_PER_SOL * amount
+            lamports: LAMPORTS_PER_SOL * Number(amount)
           })
         )
-
+        
         tx.add(
           new TransactionInstruction({
             programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
-            keys: [{pubkey: Keypair.generate().publicKey, isSigner: false, isWritable: false}],
-            data: Buffer.alloc(0)
+            keys: [],
+            data: Buffer.from(uuid(), 'utf-8')
           })
         )
-
+       
         tx.feePayer = senderPubKey
 
         const latestBlockhash = await connection.getLatestBlockhash()
         tx.recentBlockhash = latestBlockhash.blockhash
 
         sendTransaction(tx, connection).then(sig => {
+            console.log("transaction signature: ", sig)
             setTxSig(sig)
         })
     }
 
-    const sendSol = event => {
+    const sendSol = (event: any) => {
         event.preventDefault()
         
         if (!connection || !publicKey) { return }
@@ -79,10 +91,10 @@ export default function Main() {
                     <span>Connect Your Wallet</span>
             }
             {
-                txSig ?
+                publicKey && txSig ?
                     <div>
-                        <p>View your transaction on </p>
-                        <a href={link()}>Solana Explorer</a>
+                        <p>Transaction signature: {txSig}</p>
+                        <p><a target="_blank" href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}>Link</a></p>
                     </div> :
                     null
             }
