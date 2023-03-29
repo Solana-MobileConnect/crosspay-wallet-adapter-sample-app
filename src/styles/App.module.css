@@ -19,9 +19,31 @@
   display: flex;
   justify-content: center;
   padding-top: 50px;
+  font-size: 22px;
 }
 
 .MainContainer {
   width:75%;
   max-width: 1200px;
+}
+
+.sendSolForm {
+  display:flex;
+  flex-direction:column;
+}
+
+.sendSolForm div {
+  display: flex;
+  flex-direction:row;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+.sendSolForm input, .sendSolForm button {
+  font-size:26px;
+  padding:10px;
+}
+
+.sendSolForm div * {
+  margin-right: 20px;
 }

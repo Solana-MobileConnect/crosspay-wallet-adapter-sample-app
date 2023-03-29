@@ -163,3 +163,59 @@ function getIsMobile(adapters: Adapter[]) {
         */
     }
 }
+
+
+/*
+
+    (async () => {
+
+      //const connection = new Connection(clusterApiUrl('mainnet'))
+      const connection = new Connection(clusterApiUrl('devnet'))
+
+      const tx = new Transaction()
+
+      tx.add(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(account),
+          toPubkey: new PublicKey(RECEIVER_ACCOUNT),
+          lamports: LAMPORTS_PER_SOL * 0.01
+        })
+      )
+
+      tx.add(
+        new TransactionInstruction({
+          programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
+          keys: [],
+          data: Buffer.from(uuid(), 'utf-8')
+        })
+      )
+
+      tx.feePayer = new PublicKey(account)
+
+      const latestBlockhash = await connection.getLatestBlockhash()
+      tx.recentBlockhash = latestBlockhash.blockhash
+
+      const txSessionId = await client.newTransactionSession(tx, state => {
+        console.log("TX state:", state)
+
+        setTxState(state['state'])
+
+        if('signature' in state) {
+          setTxSig(state['signature'])
+        }
+        
+        if('err' in state && state['err'] != null) {
+          console.log("Transaction error:", state['err'])
+        }
+      })
+    
+      const txQr = client.getTransactionQr(txSessionId)
+
+      if (txQrRef.current) {
+        txQrRef.current.innerHTML = ''
+        txQr.append(txQrRef.current)
+      }
+
+    })().then(null, console.error)
+  }, [account])
+*/
