@@ -9,7 +9,7 @@ import CrossPayClient from './CrossPayClient.ts'
 
 import { PublicKey } from '@solana/web3.js';
 
-//import LoginWindow from './LoginWindow'
+const util = require('util')
 
 export const QRCodeWalletName = 'QR Code' as WalletName<'QRCodeWallet'>;
 
@@ -39,10 +39,6 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
         super();
 
         this._client = new CrossPayClient(config.serverHost || 'https://crosspay-server.onrender.com')
-
-        //this.emit('readyStateChange', WalletReadyState.Loadable)
-        //this.emit('readyStateChange', WalletReadyState.Installed)
-        //console.log(this.readyState)
     }
 
     get connecting() {
@@ -131,73 +127,20 @@ function getIsMobile(adapters: Adapter[]) {
         options: SendTransactionOptions = {}
     ): Promise<TransactionSignature> {
 
-      console.log("send transaction", transaction)
+      console.log("Send transaction")
 
-        /*
-        try {
-            const wallet = this._wallet;
-            if (!wallet) throw new WalletNotConnectedError();
+      const tx = transaction
 
-            try {
-                const { signers, ...sendOptions } = options;
+      console.log(util.inspect((tx as any).toJSON(), {depth:null}))
 
-                if (isVersionedTransaction(transaction)) {
-                    signers?.length && transaction.sign(signers);
-                } else {
-                    transaction = (await this.prepareTransaction(transaction, connection, sendOptions)) as T;
-                    signers?.length && (transaction as Transaction).partialSign(...signers);
-                }
+      if (!tx.feePayer) {
+        throw new Error("feePayer must be set")
+      }
 
-                sendOptions.preflightCommitment = sendOptions.preflightCommitment || connection.commitment;
-
-                const { signature } = await wallet.signAndSendTransaction(transaction, sendOptions);
-                return signature;
-            } catch (error: any) {
-                if (error instanceof WalletError) throw error;
-                throw new WalletSendTransactionError(error?.message, error);
-            }
-        } catch (error: any) {
-            this.emit('error', error);
-            throw error;
-        }
-        */
-    }
-}
-
-
-/*
-
-    (async () => {
-
-      //const connection = new Connection(clusterApiUrl('mainnet'))
-      const connection = new Connection(clusterApiUrl('devnet'))
-
-      const tx = new Transaction()
-
-      tx.add(
-        SystemProgram.transfer({
-          fromPubkey: new PublicKey(account),
-          toPubkey: new PublicKey(RECEIVER_ACCOUNT),
-          lamports: LAMPORTS_PER_SOL * 0.01
-        })
-      )
-
-      tx.add(
-        new TransactionInstruction({
-          programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
-          keys: [],
-          data: Buffer.from(uuid(), 'utf-8')
-        })
-      )
-
-      tx.feePayer = new PublicKey(account)
-
-      const latestBlockhash = await connection.getLatestBlockhash()
-      tx.recentBlockhash = latestBlockhash.blockhash
-
-      const txSessionId = await client.newTransactionSession(tx, state => {
+      const txSessionId = await this._client.newTransactionSession(tx, state => {
         console.log("TX state:", state)
 
+        /*
         setTxState(state['state'])
 
         if('signature' in state) {
@@ -207,14 +150,51 @@ function getIsMobile(adapters: Adapter[]) {
         if('err' in state && state['err'] != null) {
           console.log("Transaction error:", state['err'])
         }
+        */
       })
-    
-      const txQr = client.getTransactionQr(txSessionId)
 
-      if (txQrRef.current) {
-        txQrRef.current.innerHTML = ''
-        txQr.append(txQrRef.current)
+      const txQr = this._client.getTransactionQr(txSessionId)
+
+      this._ensureModal()
+
+      this._modal.innerHTML = ''
+
+      this._modal.innerHTML = '<h1>Send transaction with QR</h1>'
+
+      this._modal.style.visibility = 'visible'
+
+      txQr.append(this._modal)
+
+      /*
+      try {
+          const { signers, ...sendOptions } = options;
+
+          if (isVersionedTransaction(transaction)) {
+              signers?.length && transaction.sign(signers);
+          } else {
+              transaction = (await this.prepareTransaction(transaction, connection, sendOptions)) as T;
+              signers?.length && (transaction as Transaction).partialSign(...signers);
+          }
+
+          sendOptions.preflightCommitment = sendOptions.preflightCommitment || connection.commitment;
+
+          const { signature } = await wallet.signAndSendTransaction(transaction, sendOptions);
+          return signature;
+      } catch (error: any) {
+          if (error instanceof WalletError) throw error;
+          throw new WalletSendTransactionError(error?.message, error);
       }
+      */
+
+    }
+}
+
+
+/*
+
+    (async () => {
+
+    
 
     })().then(null, console.error)
   }, [account])

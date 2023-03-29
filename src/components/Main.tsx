@@ -40,8 +40,6 @@ export default function Main() {
         const latestBlockhash = await connection.getLatestBlockhash()
         tx.recentBlockhash = latestBlockhash.blockhash
 
-        console.log(util.inspect((tx as any).toJSON(), {depth:null}))
-
         sendTransaction(tx, connection).then(sig => {
             setTxSig(sig)
         })
