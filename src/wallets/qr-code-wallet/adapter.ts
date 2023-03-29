@@ -9,7 +9,7 @@ import CrossPayClient from './CrossPayClient.ts'
 
 import { PublicKey } from '@solana/web3.js';
 
-import LoginWindow from './LoginWindow'
+//import LoginWindow from './LoginWindow'
 
 export const QRCodeWalletName = 'QR Code' as WalletName<'QRCodeWallet'>;
 
@@ -28,6 +28,9 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
 
     private _client: CrossPayClient;
 
+    private _modal;
+    private _modal_inner;
+
     private _connecting: boolean;
 
     private _publicKey: PublicKey | null;
@@ -35,10 +38,11 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
     constructor(config: QRWalletAdapterConfig = {}) {
         super();
 
-        this._client = new CrossPayClient(config.serverHost || 'https://crosspay-server.onrender.com/')
+        this._client = new CrossPayClient(config.serverHost || 'https://crosspay-server.onrender.com')
 
-        this.emit('readyStateChange', WalletReadyState.Loadable)
+        //this.emit('readyStateChange', WalletReadyState.Loadable)
         //this.emit('readyStateChange', WalletReadyState.Installed)
+        //console.log(this.readyState)
     }
 
     get connecting() {
@@ -50,7 +54,29 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
     }
 
     get readyState() {
-        return WalletReadyState.Loadable;
+      // To appear under the "Detected" list
+      // TODO: should be unsupported if on mobile
+      /*
+function getIsMobile(adapters: Adapter[]) {
+    const userAgentString = getUserAgent();
+    return getEnvironment({ adapters, userAgentString }) === Environment.MOBILE_WEB;
+}
+*/
+      return WalletReadyState.Installed;
+    }
+
+    _ensureModal() {
+
+      if (this._modal === undefined) {
+
+        this._modal = document.createElement('div');
+        this._modal.style = "display:flex; flex-direction:column; align-items:center; position:fixed;padding:50px;width:50%;top:25%;left:25%;background-color:white;color:black"
+        this._modal.innerHTML = '<p>TestABC</p>'
+        this._modal.style.visibility = 'hidden'
+
+        document.body.appendChild(this._modal)
+      }
+
     }
 
     async connect(): Promise<void> {
@@ -62,7 +88,27 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
 
             this._connecting = true;
 
-            // this.emit('connect', publicKey);
+            await this._client.newLoginSession(public_key => {
+              console.log("Logged in:", public_key)
+
+              this._connecting = false
+
+              this._publicKey = new PublicKey(public_key)
+              this.emit('connect', this._publicKey)
+              this._modal.style.visibility = 'hidden'
+            })
+          
+            const loginQr = this._client.getLoginQr()
+
+            this._ensureModal()
+
+            this._modal.innerHTML = ''
+
+            this._modal.innerHTML = '<h1>Login using QR</h1>'
+
+            this._modal.style.visibility = 'visible'
+
+            loginQr.append(this._modal)
 
         } catch (error: any) {
             this.emit('error', error);
@@ -75,6 +121,8 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
 
     async disconnect(): Promise<void> {
         console.log("disconnect")
+        this._publicKey = null;
+        this.emit('disconnect');
     }
 
     async sendTransaction<T extends Transaction | VersionedTransaction>(
