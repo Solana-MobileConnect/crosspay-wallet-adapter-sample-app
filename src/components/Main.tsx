@@ -76,11 +76,11 @@ export default function Main() {
                     <form onSubmit={sendSol} className={styles.sendSolForm}>
                         <div>
                           <label>Amount to send (in SOL):</label>
-                          <input id="amount" type="text" placeholder="e.g. 0.1" size="12" required />
+                          <input id="amount" type="text" placeholder="e.g. 0.1" size={12} required />
                         </div>
                         <div>
                           <label>Receiver:</label>
-                          <input id="receiver" type="text" placeholder="public key" size="25" required />
+                          <input id="receiver" type="text" placeholder="public key" size={25} required />
                         </div>
                         <div>
                         <button type="submit">Send</button>

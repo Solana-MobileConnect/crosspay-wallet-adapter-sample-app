@@ -66,7 +66,20 @@ function getIsMobile(adapters: Adapter[]) {
       if (this.__modal === undefined) {
 
         this.__modal = document.createElement('div');
-        this.__modal.style = "display:flex; flex-direction:column; align-items:center; position:fixed;padding:50px;width:50%;top:25%;left:25%;background-color:white;color:black"
+
+        const styleObject = {
+          'display': 'flex',
+          'flex-direction': 'column',
+          'align-items': 'center',
+          'position': 'fixed',
+          'padding': '50px',
+          'width': '50%',
+          'top': '25%',
+          'left': '25%',
+          'background-color': 'white',
+          'color': 'black',
+        }
+        Object.assign(this.__modal.style, styleObject)
         this.__modal.innerHTML = '<p>TestABC</p>'
         this.__modal.style.visibility = 'hidden'
 
