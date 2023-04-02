@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>CrossPay wallet adapter sample app</title>
+        <title>QR code wallet adapter</title>
       </Head>
       <WalletContextProvider>
         <Header />

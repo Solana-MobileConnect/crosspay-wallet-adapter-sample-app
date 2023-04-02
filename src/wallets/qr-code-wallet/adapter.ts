@@ -5,8 +5,8 @@ import {
     WalletReadyState,
 } from '@solana/wallet-adapter-base';
 
-import CrossPayClient from './CrossPayClient'
-import { TransactionState } from './CrossPayClient'
+import CrossPayClient from './client'
+import { TransactionState } from './client'
 
 import { PublicKey, Transaction, TransactionVersion, VersionedTransaction, Connection, TransactionSignature } from '@solana/web3.js';
 
@@ -38,7 +38,7 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
     constructor(config: QRWalletAdapterConfig = {}) {
         super();
 
-        this._client = new CrossPayClient(config.serverHost || 'https://crosspay-server.onrender.com')
+        this._client = new CrossPayClient(config.serverHost || 'https://crosspay-server.onrender.com', 'devnet')
     }
 
     get connecting() {

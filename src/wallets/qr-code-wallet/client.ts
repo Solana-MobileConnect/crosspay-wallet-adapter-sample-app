@@ -1,7 +1,7 @@
 import { createQR, encodeURL, TransactionRequestURLFields } from '@solana/pay'
 import { Transaction } from '@solana/web3.js'
 
-export type TransactionState = {
+type TransactionState = {
   state: "init" | "requested" | "timeout" | "confirmed" | "finalized",
   err?: string | null,
   signature?: string,
@@ -16,15 +16,24 @@ export default class CrossPayClient {
   loginSessionId: string | undefined
   transactionSessions: { [index: string]: TransactionState }
   host: string
+  cluster: string
+  pollInterval: NodeJS.Timeout
 
-  constructor(host : string) {
+  constructor(host: string, cluster: string) {
+
+    if(host === undefined) throw new Error("No host provided")
+
+    if(cluster === undefined) throw new Error("No cluster provided")
+
     this.host = host
+
+    this.cluster = cluster
 
     this.loginCallback = x => {}
 
     this.transactionSessions = {}
 
-    setInterval(() => this.poll().then(null, console.error), CrossPayClient.pollingInterval)
+    this.pollInterval = setInterval(() => this.poll().then(null, console.error), CrossPayClient.pollingInterval)
   }
 
   async newLoginSession(loginCallback: (public_key: string) => void) {
@@ -32,8 +41,10 @@ export default class CrossPayClient {
     const responseRaw = await fetch(this.host + '/login_session', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json'
-      }
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({'cluster': this.cluster})
     })
 
     const response = await responseRaw.json()
@@ -60,7 +71,7 @@ export default class CrossPayClient {
 
     console.log(loginUrl)
     
-    const loginQr = createQR(loginUrl, 300, 'transparent')
+    const loginQr = createQR(loginUrl, 350, 'transparent')
 
     return loginQr
   }
@@ -77,7 +88,7 @@ export default class CrossPayClient {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({'transaction': serializedTx})
+      body: JSON.stringify({'transaction': serializedTx, 'cluster': this.cluster})
     })
 
     const response = await responseRaw.json()
@@ -108,7 +119,7 @@ export default class CrossPayClient {
 
     console.log(txUrl)
     
-    const txQr = createQR(txUrl, 300, 'transparent')
+    const txQr = createQR(txUrl, 350, 'transparent')
 
     return txQr
   }
@@ -118,7 +129,7 @@ export default class CrossPayClient {
     // There is an active login session
     if(this.loginSessionId) {
 
-      console.log("Poll login session...")
+      console.log("Poll login session")
 
       const responseRaw = await fetch(`${this.host}/login_session?login_session_id=${this.loginSessionId}`)
 
@@ -146,7 +157,7 @@ export default class CrossPayClient {
 
       // For each active tx session
       
-      console.log(`Poll transaction session ${txSessionId}...`)
+      console.log(`Poll transaction session ${txSessionId}`)
 
       const responseRaw = await fetch(`${this.host}/transaction_session?transaction_session_id=${txSessionId}`)
 
@@ -163,5 +174,14 @@ export default class CrossPayClient {
         this.transactionSessions[txSessionId].stateCallback(this.transactionSessions[txSessionId])
       }
     }
+  }
+
+  close() {
+    console.log("Close client")
+    // Stop polling
+    this.loginSessionId = undefined
+    this.transactionSessions = {}
+    
+    clearInterval(this.pollInterval)
   }
 }

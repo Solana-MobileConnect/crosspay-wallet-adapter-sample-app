@@ -1,18 +1,27 @@
 .Header {
   display: flex;
   justify-content: center;
-  padding: 50px;
+  padding: 60px 0 60px 0;
+  border-bottom:1px solid #222;
 }
 
 .HeaderContainer {
   display:flex;
   width:75%;
+  min-width: 900px;
   max-width: 1200px;
   justify-content: space-between;
+  align-items: center;
 }
 
-.HeaderContainer span {
-  font-size:24pt;
+.HeaderTitle {
+  display: flex;
+  font-size:38px;
+  align-items:center;
+}
+
+.HeaderTitle img {
+  margin-right: 20px;
 }
 
 .Main {
@@ -25,6 +34,10 @@
 .MainContainer {
   width:75%;
   max-width: 1200px;
+}
+
+.textBox {
+  margin-bottom:75px;
 }
 
 .sendSolForm {

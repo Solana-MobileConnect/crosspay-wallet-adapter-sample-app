@@ -88,7 +88,22 @@ export default function Main() {
                     </form>
                     </>
                     :
-                    <span>Connect Your Wallet</span>
+                    <>
+                      <div className={styles.textBox}>
+                        <h1>Demo</h1>
+                        <p>Even though this dApp runs in your browser, you can interact with it using your <b>mobile wallet</b>!</p>
+                        <p>It allows you to login and transfer some funds on devnet -- using QR codes!</p>
+                        <p>For more info, check out <a href="https://solana-crosspay.com">Solana CrossPay</a>.</p>
+                      </div>
+
+                      <div className={styles.textBox}>
+                        <h1>Try it!</h1>
+                        <p>1. Make sure your mobile wallet supports Solana Pay (such as Phantom, Solflare or Glow)</p>
+                        <p>2. Change your mobile wallet's network to <b>devnet</b></p>
+                        <p>3. Click "Select wallet"</p>
+                        <p>4. Select "QR Code"</p>
+                      </div>
+                    </>
             }
             {
                 publicKey && txSig ?
