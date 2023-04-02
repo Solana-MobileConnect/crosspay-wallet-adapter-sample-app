@@ -7,16 +7,24 @@ require('@solana/wallet-adapter-react-ui/styles.css')
 
 import { QRCodeWalletAdapter } from '../wallets/qr-code-wallet/adapter'
 
+import QRWindow from './QRWindow'
+
+import {useState, useMemo} from 'react'
+
 const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
-    const wallets = [
-      new QRCodeWalletAdapter(),
+
+    const [val, setVal] = useState("None")
+
+    const wallets = useMemo(() => [
+      new QRCodeWalletAdapter({}, setVal),
       //new PhantomWalletAdapter(),
-    ]
+    ],[])
 
     const endpoint = web3.clusterApiUrl('devnet')
 
     return (
         <ConnectionProvider endpoint={endpoint}>
+            <QRWindow state={val} />
             <WalletProvider wallets={wallets}>
                 <WalletModalProvider>
                     { children }

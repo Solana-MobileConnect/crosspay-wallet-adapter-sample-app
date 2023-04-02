@@ -35,8 +35,10 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
 
     private _publicKey: PublicKey | null = null;
 
-    constructor(config: QRWalletAdapterConfig = {}) {
+    constructor(config: QRWalletAdapterConfig = {}, fn: any) {
         super();
+
+        fn("1")
 
         this._client = new CrossPayClient(config.serverHost || 'https://crosspay-server.onrender.com', 'devnet')
     }
