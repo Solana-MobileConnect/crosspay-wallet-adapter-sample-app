@@ -3,9 +3,6 @@ import styles from '../styles/App.module.css'
 import { useEffect, useState, useCallback } from 'react'
 import { Transaction, PublicKey, LAMPORTS_PER_SOL, SystemProgram, TransactionInstruction, Keypair } from '@solana/web3.js'
 
-// TODO: top up devnet if low balance
-// TODO: show balance
-
 const util = require('util')
 
 import { v4 as uuid } from 'uuid'
