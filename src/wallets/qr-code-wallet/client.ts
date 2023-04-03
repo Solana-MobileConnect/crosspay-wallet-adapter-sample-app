@@ -1,7 +1,7 @@
 import { createQR, encodeURL, TransactionRequestURLFields } from '@solana/pay'
 import { Transaction } from '@solana/web3.js'
 
-type TransactionState = {
+export type TransactionState = {
   state: "init" | "requested" | "timeout" | "confirmed" | "finalized",
   err?: string | null,
   signature?: string,

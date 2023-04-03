@@ -18,7 +18,7 @@ export default function Main() {
     const { connection } = useConnection();
     const { publicKey, sendTransaction, wallet } = useWallet();
 
-    const onConnect = useCallback(async (publicKey) => {
+    const onConnect = useCallback(async (publicKey: PublicKey) => {
       console.log("Connected:", publicKey.toString())
 
       try {
@@ -47,12 +47,12 @@ export default function Main() {
         console.error(error)
         setBalanceStatus("error")
       }
-    })
+    }, [connection, setBalanceStatus])
 
     const onDisconnect = useCallback(() => {
       console.log("Wallet disconnected")
       setTxSig('')
-    })
+    }, [setTxSig])
 
     useEffect(() => {
       
@@ -67,7 +67,7 @@ export default function Main() {
         }
       }
 
-    }, [publicKey])
+    }, [onConnect, onDisconnect, wallet])
    
 
     const sendSolExec = async (receiver: string, amount: string) => {
@@ -172,9 +172,9 @@ export default function Main() {
 
                     <p>To try it yourself:</p>
                     <p>1. Choose a mobile wallet with Solana Pay support (Phantom, Solflare and Glow are fine!)</p>
-                    <p>2. Change your mobile wallet's network to <b>devnet</b></p>
-                    <p>3. Click "Select wallet"</p>
-                    <p>4. Select "QR Code"</p>
+                    <p>2. Change your mobile wallet&apos;s network to <b>devnet</b></p>
+                    <p>3. Click &quot;Select wallet&quot;</p>
+                    <p>4. Select &quot;QR Code&quot;</p>
                     </>
                 }
                 {
