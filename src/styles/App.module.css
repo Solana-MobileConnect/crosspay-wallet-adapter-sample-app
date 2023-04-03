@@ -27,8 +27,9 @@
 .Main {
   display: flex;
   justify-content: center;
-  padding-top: 50px;
+  padding-top: 30px;
   font-size: 22px;
+  padding-bottom:50px;
 }
 
 .MainContainer {
@@ -53,8 +54,8 @@
 }
 
 .sendSolForm input, .sendSolForm button {
-  font-size:26px;
-  padding:10px;
+  font-size:22px;
+  padding:5px;
 }
 
 .sendSolForm div * {

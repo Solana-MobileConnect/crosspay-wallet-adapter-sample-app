@@ -35,10 +35,8 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
 
     private _publicKey: PublicKey | null = null;
 
-    constructor(config: QRWalletAdapterConfig = {}, fn: any) {
+    constructor(config: QRWalletAdapterConfig = {}) {
         super();
-
-        fn("1")
 
         this._client = new CrossPayClient(config.serverHost || 'https://crosspay-server.onrender.com', 'devnet')
     }
@@ -146,7 +144,7 @@ function getIsMobile(adapters: Adapter[]) {
 
       const tx = transaction
 
-      console.log(util.inspect((tx as any).toJSON(), {depth:null}))
+      //console.log(util.inspect((tx as any).toJSON(), {depth:null}))
 
       if (!tx.feePayer) {
         throw new Error("feePayer must be set")
