@@ -54,7 +54,7 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
   }
 
   get readyState() {
-    // To appear under the "Detected" list
+    // To appear in the "Detected" list
     return WalletReadyState.Installed;
   }
 
@@ -81,7 +81,17 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
 
       const loginQr = this._client.getLoginQr()
       
-      this._modal.showLoginQR(loginQr)
+      this._modal.showLoginQR(loginQr, () => {
+
+        console.log("Abort login")
+
+        // stop polling
+        this._client.loginSessionId = undefined
+
+        this._connecting = false
+
+        this._modal.hide()
+      })
 
     } catch (error: any) {
       this.emit('error', error);

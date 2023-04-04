@@ -5,11 +5,15 @@ export default class QRCodeModal {
 
   private _initialized: Boolean = false;
 
-  showLoginQR(loginQr: any) {
+  private _onClose: () => void = undefined;
+
+  showLoginQR(loginQr: any, onClose: () => void) {
 
     if(typeof document === 'undefined') throw new Error('document is undefined')
 
     this._initialize()
+
+    this._onClose = onClose
 
     const outer = this._outer as HTMLElement
 
@@ -17,34 +21,10 @@ export default class QRCodeModal {
 
     const inner = this._inner as HTMLElement
 
-    const headerContainer = document.createElement('div')
+    inner.innerHTML = ''
 
-    const headerContainerStyles = {
-      'display': 'flex',
-      'flex-direction': 'row',
-      'justify-content': 'space-between',
-      'align-items': 'flex-start',
-      'margin-bottom': '20px'
-    }
-
-    Object.assign(headerContainer.style, headerContainerStyles)
-
-    inner.appendChild(headerContainer)
-
-    const headerTitle = document.createElement('h1')
-
-    const headerTitleStyles = {
-      'margin': '0',
-      'padding': '0',
-      'font-size': '32px'
-    }
-
-    Object.assign(headerTitle.style, headerTitleStyles)
-
-    headerTitle.innerHTML = 'Login using QR code'
-
-    headerContainer.appendChild(headerTitle)
-
+    // Close button
+    
     const headerClose = document.createElement('div')
 
     const headerCloseStyles = {
@@ -56,7 +36,7 @@ export default class QRCodeModal {
       'color': '#808080',
       'border-radius': '4px',
       'cursor': 'pointer',
-      'margin-top': '-20px'
+      'align-self': 'flex-end'
     }
 
     Object.assign(headerClose.style, headerCloseStyles)
@@ -79,17 +59,42 @@ export default class QRCodeModal {
       Object.assign(headerClose.style, headerCloseMouseoutStyles)
     })
 
-    headerContainer.appendChild(headerClose)
+    headerClose.addEventListener("click", (event) => {
+      this._onClose && this._onClose()
+    })
+
+    inner.appendChild(headerClose)
+
+    // Title
+
+    const headerTitle = document.createElement('h1')
+
+    const headerTitleStyles = {
+      'margin': '0',
+      'padding': '0',
+      'font-size': '32px',
+      'align-self': 'center',
+      'margin-bottom': '20px'
+    }
+
+    Object.assign(headerTitle.style, headerTitleStyles)
+
+    headerTitle.innerHTML = 'Login with QR code'
+
+    inner.appendChild(headerTitle)
+
+    // QR Code
 
     loginQr.append(inner)
 
-    inner.lastElementChild.style['align-self'] = 'flex-start'
+    inner.lastElementChild.style['align-self'] = 'center'
 
     const textBottom = document.createElement('div')
 
     const textBottomStyles = {
       'font-size': '18px',
-      'margin-top': '20px'
+      'margin': '25px 25px 25px 25px',
+      'align-self': 'flex-start',
     }
 
     Object.assign(textBottom.style, textBottomStyles)
@@ -157,6 +162,10 @@ export default class QRCodeModal {
     }
     
     Object.assign(innerContainer.style, innerContainerStyles)
+
+    innerContainer.addEventListener("click", (event) => {
+      this._onClose && this._onClose()
+    })
     
     this._outer.appendChild(innerContainer)
 
@@ -166,14 +175,19 @@ export default class QRCodeModal {
       'display': 'flex',
       'flex-direction': 'column',
       'background-color': 'white',
-      'padding': '30px',
-      'width': '400px',
+      'padding': '20px',
+      'width': '500px',
+      'box-sizing': 'border-box',
       'border-radius': '8px',
       'border': '1px #333 solid',
       'color': 'black',
     }
 
     Object.assign(this._inner.style, innerStyles)
+
+    this._inner.addEventListener("click", (event) => {
+      event.stopPropagation()
+    })
 
     innerContainer.appendChild(this._inner)
 
