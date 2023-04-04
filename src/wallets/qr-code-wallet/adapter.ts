@@ -5,6 +5,8 @@ import {
   WalletReadyState,
 } from '@solana/wallet-adapter-base';
 
+import QRCodeStyling from '@solana/qr-code-styling';
+
 import CrossPayClient from './client'
 import { TransactionState } from './client'
 
@@ -67,6 +69,11 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
 
       this._connecting = true;
 
+      this._modal.showLoginQr(null, () => {
+        console.log("Abort login")
+        this._modal.hide()
+      })
+      
       await this._client.newLoginSession((public_key) => {
         console.log("Logged in:", public_key)
 
@@ -81,14 +88,12 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
 
       const loginQr = this._client.getLoginQr()
       
-      this._modal.showLoginQR(loginQr, () => {
+      this._modal.showLoginQr(loginQr, () => {
 
         console.log("Abort login")
 
         // stop polling
         this._client.loginSessionId = undefined
-
-        this._connecting = false
 
         this._modal.hide()
       })
@@ -123,44 +128,76 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
     if (!tx.feePayer) {
       throw new Error("feePayer must be set")
     }
+    
+    let resolvePromise: any;
+    let rejectPromise: any;
 
+    const promise = new Promise((resolve, reject) => {
+      resolvePromise = resolve
+      rejectPromise = reject
+    }) as Promise<TransactionSignature>
+    
+    let txQr: QRCodeStyling | undefined = undefined;
+    
     const that = this
+    let txSessionId: string | undefined = undefined;
 
-    return new Promise((resolve, reject) => {
+    function onTransactionClose() {
+      console.log("Abort transaction")
+      
+      // stop polling
+      if(txSessionId) that._client.transactionSessions[txSessionId].state = 'aborted'
+
+      that._modal.hide()
+    }
+
+    function transactionSessionStateCallback(state: TransactionState) {
+      console.log("TX state:", state)
+      
+      // For testing
       /*
-      function transactionSessionStateCallback(state: TransactionState) {
-        console.log("TX state:", state)
+      if(state['state'] == 'requested') {
+        state['state'] = 'confirmed'
+        state['err'] = 'some error'
+      }
+      */
+
+      if ('err' in state && state['err'] != null) {
+        console.log("TX error:", state['err'])
+
+        txQr !== undefined && that._modal.showTransactionQr(txQr, onTransactionClose, state)
+
+        rejectPromise(new Error(state['err']))
+      } else {
 
         if ('signature' in state && (state['state'] == 'confirmed' || state['state'] == 'finalized')) {
           console.log("TX confirmed:", state['signature'])
-          that._modal.style.visibility = 'hidden'
-          resolve(state['signature'] as string)
-        }
-
-        if ('err' in state && state['err'] != null) {
-          console.log("TX error:", state['err'])
-          that._modal.style.visibility = 'hidden'
-          reject(state['err'])
+          resolvePromise(state['signature'] as string)
+          that._modal.hide()
+        } else {
+          // states: 'init', 'requested'
+          txQr !== undefined && that._modal.showTransactionQr(txQr, onTransactionClose, state)
         }
 
       }
+    }
 
-      this._client.newTransactionSession(tx, transactionSessionStateCallback).then(txSessionId => {
+    this._client.newTransactionSession(tx, transactionSessionStateCallback).then(
+      (value) => {
+        txSessionId = value;
+        txQr = this._client.getTransactionQr(txSessionId)
+      },
+      (error: any) => {
+        console.error(error)
+        rejectPromise(error)
+      }
+    )
+    
+    this._modal.showTransactionQr(null, () => {
+      console.log("Abort transaction")
+      this._modal.hide()
+    }, {state: 'init'})
 
-        const txQr = this._client.getTransactionQr(txSessionId)
-
-        this._modal.innerHTML = ''
-
-        this._modal.innerHTML = '<h1>Send transaction with QR</h1>'
-
-        this._modal.style.visibility = 'visible'
-
-        txQr.append(this._modal)
-
-      }, reject)
-
-      */
-    })
-
+    return promise
   }
 }

@@ -2,7 +2,7 @@ import { createQR, encodeURL, TransactionRequestURLFields } from '@solana/pay'
 import { Transaction } from '@solana/web3.js'
 
 export type TransactionState = {
-  state: "init" | "requested" | "timeout" | "confirmed" | "finalized",
+  state: "init" | "requested" | "timeout" | "confirmed" | "finalized" | "aborted",
   err?: string | null,
   signature?: string,
   stateCallback?: any
@@ -139,12 +139,14 @@ export default class CrossPayClient {
         const response = await responseRaw.json()
         console.log(response)
 
-        if (response['state'] == 'set') {
-          console.log("Logged in as:", response['public_key'])
+        if(this.loginSessionId) {
+          if (response['state'] == 'set') {
+            console.log("Logged in as:", response['public_key'])
 
-          this.loginCallback(response['public_key'])
+            this.loginCallback(response['public_key'])
 
-          this.loginSessionId = undefined
+            this.loginSessionId = undefined
+          }
         }
 
       }
@@ -152,7 +154,7 @@ export default class CrossPayClient {
     
     for(const txSessionId in this.transactionSessions) {
       const txSession = this.transactionSessions[txSessionId]
-      if(txSession.state == "finalized")
+      if(txSession.state == "finalized" || txSession.state == "aborted" || ('err' in txSession && txSession.err != null))
         continue
 
       // For each active tx session

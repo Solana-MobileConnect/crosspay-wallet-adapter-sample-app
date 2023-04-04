@@ -118,7 +118,6 @@ export default function Main() {
 
         } catch(error: any) {
           console.error(error)
-          setTxSig('error')
         }
     }
 
@@ -127,6 +126,7 @@ export default function Main() {
         
         if (!connection || !publicKey) { return }
 
+        setTxSig('')
         sendSolExec(event.target.receiver.value, event.target.amount.value).then(null, console.error)
 
     }
