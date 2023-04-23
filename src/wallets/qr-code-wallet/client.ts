@@ -5,7 +5,8 @@ export type TransactionState = {
   state: "init" | "requested" | "timeout" | "confirmed" | "finalized" | "aborted",
   err?: string | null,
   signature?: string,
-  stateCallback?: any
+  stateCallback?: any,
+  sessionId: string
 }
 
 
@@ -97,7 +98,8 @@ export default class CrossPayClient {
 
     this.transactionSessions[response.transaction_session_id] = {
       state: "init",
-      stateCallback: stateCallback
+      stateCallback: stateCallback,
+      sessionId: response.transaction_session_id
     }
 
     stateCallback(this.transactionSessions[response.transaction_session_id])
@@ -154,6 +156,7 @@ export default class CrossPayClient {
     
     for(const txSessionId in this.transactionSessions) {
       const txSession = this.transactionSessions[txSessionId]
+
       if(txSession.state == "finalized" || txSession.state == "aborted" || ('err' in txSession && txSession.err != null))
         continue
 
@@ -162,6 +165,11 @@ export default class CrossPayClient {
       console.log(`Poll transaction session ${txSessionId}`)
 
       const responseRaw = await fetch(`${this.host}/transaction_session?transaction_session_id=${txSessionId}`)
+      
+      // The user may have aborted the session
+      if (txSession.state as any == "aborted") {
+        continue
+      }
 
       if (!responseRaw.ok) {
         console.log("Request failed")

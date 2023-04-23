@@ -39,6 +39,16 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
   private _publicKey: PublicKey | null = null;
 
   private _modal: QRCodeModal;
+  
+  private _isTransacting: boolean = false;
+
+  private _txQr: QRCodeStyling | undefined = undefined;
+
+  private _txSessionId: string | undefined = undefined;
+
+  private _resolveTxPromise: any = undefined;
+
+  private _rejectTxPromise: any = undefined;
 
   constructor(config: QRWalletAdapterConfig = {}) {
     super();
@@ -69,25 +79,26 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
 
       this._connecting = true;
 
+      // Show "Preparing login..."
       this._modal.showLoginQr(null, () => {
         console.log("Abort login")
         this._modal.hide()
       })
-      
+
       await this._client.newLoginSession((public_key) => {
         console.log("Logged in:", public_key)
 
         this._connecting = false
 
         this._publicKey = new PublicKey(public_key)
-        
+
         this.emit('connect', this._publicKey)
 
         this._modal.hide()
       })
 
       const loginQr = this._client.getLoginQr()
-      
+
       this._modal.showLoginQr(loginQr, () => {
 
         console.log("Abort login")
@@ -95,15 +106,15 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
         // stop polling
         this._client.loginSessionId = undefined
 
+        this._connecting = false;
+
         this._modal.hide()
       })
 
     } catch (error: any) {
       this.emit('error', error);
-      throw error;
-
-    } finally {
       this._connecting = false;
+      throw error;
     }
   }
 
@@ -120,84 +131,114 @@ export class QRCodeWalletAdapter extends BaseWalletAdapter {
   ): Promise<TransactionSignature> {
 
     console.log("Send transaction")
+    
+    // Elementary checks
 
-    const tx = transaction
+    try {
 
-    //console.log(util.inspect((tx as any).toJSON(), {depth:null}))
+      if (!this._publicKey) throw new Error("Wallet not connected")
 
-    if (!tx.feePayer) {
-      throw new Error("feePayer must be set")
+      if (!transaction.feePayer) {
+        throw new Error("feePayer must be set")
+      }
+      
+      if (this._isTransacting) {
+        throw new Error("Transaction in progress")
+      }
+
+    } catch (error: any) {
+      this.emit('error', error);
+      throw error;
     }
     
-    let resolvePromise: any;
-    let rejectPromise: any;
+    // Initiate transaction
+    
+    this._isTransacting = true;
+    
+    // Deferred promise
 
     const promise = new Promise((resolve, reject) => {
-      resolvePromise = resolve
-      rejectPromise = reject
+      this._resolveTxPromise = resolve
+      this._rejectTxPromise = reject
     }) as Promise<TransactionSignature>
+
+    this._client.newTransactionSession(transaction, this._onTransactionStateChange.bind(this)).catch(this._onTransactionError)
     
-    let txQr: QRCodeStyling | undefined = undefined;
-    
-    const that = this
-    let txSessionId: string | undefined = undefined;
-
-    function onTransactionClose() {
-      console.log("Abort transaction")
-      
-      // stop polling
-      if(txSessionId) that._client.transactionSessions[txSessionId].state = 'aborted'
-
-      that._modal.hide()
-    }
-
-    function transactionSessionStateCallback(state: TransactionState) {
-      console.log("TX state:", state)
-      
-      // For testing
-      /*
-      if(state['state'] == 'requested') {
-        state['state'] = 'confirmed'
-        state['err'] = 'some error'
-      }
-      */
-
-      if ('err' in state && state['err'] != null) {
-        console.log("TX error:", state['err'])
-
-        txQr !== undefined && that._modal.showTransactionQr(txQr, onTransactionClose, state)
-
-        rejectPromise(new Error(state['err']))
-      } else {
-
-        if ('signature' in state && (state['state'] == 'confirmed' || state['state'] == 'finalized')) {
-          console.log("TX confirmed:", state['signature'])
-          resolvePromise(state['signature'] as string)
-          that._modal.hide()
-        } else {
-          // states: 'init', 'requested'
-          txQr !== undefined && that._modal.showTransactionQr(txQr, onTransactionClose, state)
-        }
-
-      }
-    }
-
-    this._client.newTransactionSession(tx, transactionSessionStateCallback).then(
-      (value) => {
-        txSessionId = value;
-        txQr = this._client.getTransactionQr(txSessionId)
-      },
-      (error: any) => {
-        console.error(error)
-        rejectPromise(error)
-      }
-    )
-    
+    // Show "Preparing transaction..."
     this._modal.showTransactionQr(null, () => {
-      console.log("Abort transaction")
-      this._modal.hide()
-    }, {state: 'init'})
+      this._onTransactionError(new Error("User aborted transaction"))
+    }, { state: 'init', sessionId: '' })
 
     return promise
+  }
+  
+  _onTransactionStateChange(state: TransactionState) {
+    
+    console.log("TX state:", state)
+    
+    // For testing
+    //if(state['state'] == 'requested') {
+    //  state['state'] = 'confirmed'
+    //  state['err'] = 'some error'
+    //}
+
+    if (!this._isTransacting) {
+      return
+    }
+    
+    if ('err' in state && state['err'] != null) {
+      console.log("TX error detected:", state['err'])
+
+      // Show that an error occurred
+      // Only pass the error back once the modal is closed
+      this._txQr !== undefined && this._modal.showTransactionQr(this._txQr, () => {
+        this._onTransactionError(new Error(state['err'] as string))
+      }, state)
+
+    } else if ('signature' in state && (state['state'] == 'confirmed' || state['state'] == 'finalized')) {
+
+      console.log("TX confirmed:", state['signature'])
+      
+      this._onTransactionSuccess(state['signature'] as string)
+
+    } else if (state.state == 'init' || state.state == 'requested') {
+      
+      if(this._txSessionId === undefined || this._txQr === undefined) {
+        this._txSessionId = state.sessionId
+        this._txQr = this._client.getTransactionQr(this._txSessionId)
+      }
+      
+      this._modal.showTransactionQr(this._txQr, () => {
+        this._onTransactionError(new Error("User aborted transaction"))
+      }, state)
+    }
+  }
+
+  _onTransactionError(error: Error) {
+    // console.error(error)
+    
+    // stop polling
+    this._txSessionId && (this._client.transactionSessions[this._txSessionId].state = 'aborted')
+    
+    console.log(this._client.transactionSessions)
+
+    this._rejectTxPromise(error)
+    this._isTransacting = false
+    this._txSessionId = undefined
+    this._txQr = undefined
+    this._modal.hide()
+  }
+  
+  _onTransactionSuccess(signature: TransactionSignature) {
+    //console.log("TX success:", signature)
+
+    // stop polling
+    this._txSessionId && (this._client.transactionSessions[this._txSessionId].state = 'aborted')
+
+    this._resolveTxPromise(signature)
+    this._isTransacting = false
+    this._txSessionId = undefined
+    this._txQr = undefined
+    this._modal.hide()
   }
 }
