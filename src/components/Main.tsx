@@ -149,7 +149,7 @@ export default function Main() {
       }
     )().catch(console.error)
 
-  }, [setTxSig, connection, publicKey])
+  }, [setTxSig, connection, publicKey, sendTransaction])
 
   return (
     <div className={styles.Main}>
